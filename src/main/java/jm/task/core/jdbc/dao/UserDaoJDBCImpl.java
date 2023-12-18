@@ -3,34 +3,30 @@ package jm.task.core.jdbc.dao;
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
-    private static Statement statement;
-    private static Connection connection;
+    private static final UserDaoJDBCImpl INSTANCE = new UserDaoJDBCImpl();
+    private UserDaoJDBCImpl() {
+    }
 
-    static  {
-        connection = Util.getConnection();
-        try {
-            statement = connection.createStatement();
-            statement.execute("CREATE DATABASE IF NOT EXISTS mydatabase");
+    public static UserDaoJDBCImpl getInstance(){
+        try (Connection connection = Util.get();
+             Statement statement = connection.createStatement()) {
             statement.execute("USE mydatabase");
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static Connection getConnection() {
-        return connection;
+        return INSTANCE;
     }
 
     public void createUsersTable() {
-        try {
+        try (Connection connection = Util.get();
+             Statement statement = connection.createStatement()) {
+            System.out.println(connection);
+            System.out.println(statement);
             statement.execute("""
                               CREATE TABLE IF NOT EXISTS user(
                                      id SERIAL PRIMARY KEY,
@@ -44,7 +40,8 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     public void dropUsersTable() {
-        try {
+        try (Connection connection = Util.get();
+             Statement statement = connection.createStatement()) {
             statement.execute("DROP TABLE IF EXISTS user;");
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -52,25 +49,32 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     public void saveUser(String name, String lastName, byte age) {
-        try {
-            String sql = String.format("INSERT user(name, lastName, age) VALUES ('%1$s', '%2$s', %3$s);"
-                    ,name,lastName,age);
-            statement.executeUpdate(sql);
+        String sql = "INSERT user(name, lastName, age) VALUES (?, ?, ?);";
+        try (Connection connection = Util.get();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1,name);
+            preparedStatement.setString(2,lastName);
+            preparedStatement.setByte(3,age);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
     public void removeUserById(long id) {
-        try {
-            statement.executeUpdate("DELETE FROM user WHERE (id = " + id + ");");
+        String sql = "DELETE FROM user WHERE (id = ?);";
+        try (Connection connection = Util.get();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setLong(1,id);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
     public List<User> getAllUsers() {
-        try {
+        try (Connection connection = Util.get();
+             Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery("SELECT name, lastName, age FROM User;");
             List<User> user = new ArrayList<>();
             while (resultSet.next()){
@@ -85,7 +89,8 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     public void cleanUsersTable() {
-        try {
+        try (Connection connection = Util.get();
+             Statement statement = connection.createStatement()) {
             statement.executeUpdate("DELETE FROM user;");
         } catch (SQLException e) {
             throw new RuntimeException(e);
