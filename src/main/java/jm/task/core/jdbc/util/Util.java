@@ -12,10 +12,9 @@ public class Util {
     private static final String PASSWORD = "i1234567";
     public static Connection getMyConnection(){
         try {
-            Connection connection = DriverManager.getConnection(CONNECTIONURL, USERNAME, PASSWORD);
 //            Statement statement = connection.createStatement());
 //            statement.execute("USE mydatabase");
-            return connection;
+            return DriverManager.getConnection(CONNECTIONURL, USERNAME, PASSWORD);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
