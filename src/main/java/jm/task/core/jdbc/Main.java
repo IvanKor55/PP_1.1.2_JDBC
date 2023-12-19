@@ -4,10 +4,12 @@ import jm.task.core.jdbc.dao.UserDao;
 import jm.task.core.jdbc.dao.UserDaoJDBCImpl;
 import jm.task.core.jdbc.util.Util;
 
+import java.sql.SQLException;
+
 public class Main {
     public static void main(String[] args) {
         // реализуйте алгоритм здесь
-        UserDao userDao = UserDaoJDBCImpl.getInstance();
+        UserDao userDao = new UserDaoJDBCImpl();
 
         userDao.createUsersTable();
 
@@ -20,6 +22,10 @@ public class Main {
         System.out.println(userDao.getAllUsers());
         userDao.cleanUsersTable();
         userDao.dropUsersTable();
-        Util.closePool();
+        try {
+            UserDaoJDBCImpl.connection.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
